@@ -21,7 +21,6 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: function (origin, callback) {
-        // allow requests with no origin (like Postman)
         if (!origin) return callback(null, true);
 
         if (allowedOrigins.includes(origin)) {
@@ -33,8 +32,6 @@ app.use(cors({
     credentials: true
 }));
 
-// 👇 VERY IMPORTANT (preflight fix)
-app.options("/*", cors());
 app.use(express.json());
 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
