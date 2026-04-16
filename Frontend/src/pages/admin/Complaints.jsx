@@ -21,6 +21,14 @@ export default function Complaints() {
 
     const serverBase = (API && API.defaults && API.defaults.baseURL) ? API.defaults.baseURL.replace(/\/api\/?$/, '') : '';
 
+    const makeAudioSrc = (audioPath) => {
+        if (!audioPath) return '';
+        if (/^https?:\/\//.test(audioPath)) return audioPath;
+        const cleaned = audioPath.replaceAll('\\', '/').replace(/^\/+/, '');
+        const base = serverBase || (typeof window !== 'undefined' ? window.location.origin : '');
+        return `${base}/${cleaned}`;
+    };
+
     return (
         <div className="flex">
             <Sidebar />
@@ -40,7 +48,7 @@ export default function Complaints() {
                                     <div className="text-xs text-gray-400 mt-2">{c.category || '-'} • {c.priority || '-'}</div>
                                     {c.audioUrl && (
                                         <div className="mt-3">
-                                            <audio controls className="w-full" src={`${serverBase}/${c.audioUrl.replaceAll('\\', '/')}`} />
+                                            <audio controls className="w-full" src={makeAudioSrc(c.audioUrl)} />
                                         </div>
                                     )}
                                 </div>
