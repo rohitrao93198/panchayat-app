@@ -17,7 +17,7 @@ const app = express();
 app.use(cors({
     origin: [
         "http://localhost:5173",
-        "https://your-frontend.vercel.app"
+        "https://panchayat-app-five.vercel.app"
     ],
     credentials: true
 }));
