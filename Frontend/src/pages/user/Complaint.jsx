@@ -26,7 +26,7 @@ export default function Complaint() {
             mediaRef.current = mediaRecorder;
             chunksRef.current = [];
 
-            // 🎯 SPEECH RECOGNITION (FIXED)
+            // 🎯 SPEECH RECOGNITION (Desktop only)
             try {
                 const SpeechRecognition =
                     window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -34,7 +34,7 @@ export default function Complaint() {
                 if (SpeechRecognition) {
                     const recognition = new SpeechRecognition();
                     recognition.lang = "en-IN";
-                    recognition.interimResults = false; // 🔥 IMPORTANT
+                    recognition.interimResults = false;
                     recognition.continuous = false;
 
                     recognition.onresult = (event) => {
@@ -70,14 +70,16 @@ export default function Complaint() {
 
             mediaRecorder.onstop = () => {
                 const blob = new Blob(chunksRef.current, {
-                    type: "audio/webm"
+                    type: MediaRecorder.isTypeSupported("audio/webm")
+                        ? "audio/webm"
+                        : "audio/mp4"
                 });
 
                 const url = URL.createObjectURL(blob);
                 setAudioURL(url);
 
-                const file = new File([blob], `complaint-${Date.now()}.webm`, {
-                    type: "audio/webm"
+                const file = new File([blob], `complaint-${Date.now()}`, {
+                    type: blob.type
                 });
 
                 setForm((prev) => ({ ...prev, file }));
@@ -116,30 +118,37 @@ export default function Complaint() {
         if (file) {
             setForm((prev) => ({ ...prev, file }));
             setAudioURL(URL.createObjectURL(file));
-
-            // reset transcript
-            setTranscript("");
+            setTranscript(""); // reset transcript
         }
     };
 
-    // 🚀 SUBMIT
+    // 🚀 SUBMIT (FINAL FIXED)
     const handleSubmit = async () => {
         try {
             const formData = new FormData();
 
-            // 🔥 FINAL TEXT FIX (MOST IMPORTANT)
-            const finalText =
-                transcript?.trim() ||
-                form.description?.trim() ||
-                form.title?.trim() ||
-                "";
-
             formData.append("title", form.title);
             formData.append("description", form.description);
-            formData.append("text", finalText);
 
+            // ✅ ONLY SEND TEXT IF AVAILABLE (VERY IMPORTANT)
+            if (transcript && transcript.trim()) {
+                formData.append("text", transcript.trim());
+            }
+
+            // ✅ FILE (mobile ke liye zaruri)
             if (form.file) {
                 formData.append("file", form.file);
+            }
+
+            // ❌ VALIDATION
+            if (
+                !form.file &&
+                !transcript.trim() &&
+                !form.description.trim() &&
+                !form.title.trim()
+            ) {
+                toast.error("Please enter or record complaint");
+                return;
             }
 
             await createComplaint(formData);
@@ -161,7 +170,7 @@ export default function Complaint() {
 
             {/* INFO */}
             <p className="text-xs text-gray-500 mb-2">
-                ⚠️ Voice typing works best on Desktop Chrome. Mobile may be limited.
+                ⚠️ Desktop = instant speech-to-text | Mobile = server processing
             </p>
 
             {/* TITLE */}
@@ -219,10 +228,17 @@ export default function Complaint() {
                 <audio controls className="w-full mb-3" src={audioURL} />
             )}
 
-            {/* 🎤 TRANSCRIPT DEBUG */}
+            {/* 🎤 TRANSCRIPT */}
             {transcript && (
                 <div className="mb-3 p-2 bg-gray-100 rounded text-sm">
                     🎤 {transcript}
+                </div>
+            )}
+
+            {/* SERVER PROCESS MESSAGE */}
+            {!transcript && form.file && (
+                <div className="text-xs text-gray-500 mb-2">
+                    🎧 Voice will be processed on server...
                 </div>
             )}
 
