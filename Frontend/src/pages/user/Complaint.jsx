@@ -8,98 +8,139 @@ export default function Complaint() {
         description: "",
         file: null
     });
+
     const [recording, setRecording] = useState(false);
     const [audioURL, setAudioURL] = useState(null);
     const [transcript, setTranscript] = useState("");
+
     const mediaRef = useRef(null);
     const chunksRef = useRef([]);
     const recognitionRef = useRef(null);
 
+    // 🎤 START RECORDING
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
             const mediaRecorder = new MediaRecorder(stream);
             mediaRef.current = mediaRecorder;
             chunksRef.current = [];
 
-            // Start speech recognition (client-side) if available
+            // 🎯 SPEECH RECOGNITION (FIXED)
             try {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const SpeechRecognition =
+                    window.SpeechRecognition || window.webkitSpeechRecognition;
+
                 if (SpeechRecognition) {
                     const recognition = new SpeechRecognition();
-                    recognition.lang = 'en-IN';
-                    recognition.interimResults = true;
-                    recognition.continuous = true;
+                    recognition.lang = "en-IN";
+                    recognition.interimResults = false; // 🔥 IMPORTANT
+                    recognition.continuous = false;
+
                     recognition.onresult = (event) => {
-                        let interim = '';
-                        let final = '';
-                        for (let i = event.resultIndex; i < event.results.length; ++i) {
-                            const res = event.results[i];
-                            if (res.isFinal) final += res[0].transcript;
-                            else interim += res[0].transcript;
+                        let finalText = "";
+
+                        for (let i = 0; i < event.results.length; i++) {
+                            if (event.results[i].isFinal) {
+                                finalText += event.results[i][0].transcript + " ";
+                            }
                         }
-                        setTranscript((prev) => (prev + final + (interim ? ` ${interim}` : '')));
+
+                        if (finalText.trim()) {
+                            setTranscript(finalText.trim());
+                        }
                     };
-                    recognition.onerror = (e) => console.debug('recognition error', e);
+
+                    recognition.onerror = (e) => {
+                        console.log("Speech error:", e);
+                    };
+
                     recognitionRef.current = recognition;
                     recognition.start();
                 }
-            } catch (e) {
-                console.debug('SpeechRecognition start failed', e);
+            } catch (err) {
+                console.log("SpeechRecognition not supported", err);
             }
 
             mediaRecorder.ondataavailable = (e) => {
-                if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+                if (e.data.size > 0) {
+                    chunksRef.current.push(e.data);
+                }
             };
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: chunksRef.current[0]?.type || 'audio/webm' });
+                const blob = new Blob(chunksRef.current, {
+                    type: "audio/webm"
+                });
+
                 const url = URL.createObjectURL(blob);
                 setAudioURL(url);
-                // Create a File so it can be appended to FormData
-                const file = new File([blob], `complaint-${Date.now()}.webm`, { type: blob.type });
-                setForm((f) => ({ ...f, file }));
-                // stop all tracks
-                stream.getTracks().forEach(t => t.stop());
-                // stop recognition if running
-                try { recognitionRef.current?.stop(); } catch (e) { }
+
+                const file = new File([blob], `complaint-${Date.now()}.webm`, {
+                    type: "audio/webm"
+                });
+
+                setForm((prev) => ({ ...prev, file }));
+
+                stream.getTracks().forEach((track) => track.stop());
+
+                try {
+                    recognitionRef.current?.stop();
+                } catch { }
             };
 
             mediaRecorder.start();
             setRecording(true);
         } catch (err) {
-            console.error("Microphone access denied", err);
-            toast.error("Cannot access microphone");
+            console.error(err);
+            toast.error("Microphone access denied ❌");
         }
     };
 
+    // 🛑 STOP RECORDING
     const stopRecording = () => {
         if (mediaRef.current && mediaRef.current.state !== "inactive") {
             mediaRef.current.stop();
             setRecording(false);
-            try { recognitionRef.current?.stop(); } catch (e) { }
+
+            try {
+                recognitionRef.current?.stop();
+            } catch { }
         }
     };
 
+    // 📁 FILE UPLOAD
     const handleFileChange = (e) => {
-        const f = e.target.files[0];
-        if (f) {
-            setForm({ ...form, file: f });
-            const url = URL.createObjectURL(f);
-            setAudioURL(url);
-            // clear transcript when user chooses file
-            setTranscript('');
+        const file = e.target.files[0];
+
+        if (file) {
+            setForm((prev) => ({ ...prev, file }));
+            setAudioURL(URL.createObjectURL(file));
+
+            // reset transcript
+            setTranscript("");
         }
     };
 
+    // 🚀 SUBMIT
     const handleSubmit = async () => {
         try {
             const formData = new FormData();
+
+            // 🔥 FINAL TEXT FIX (MOST IMPORTANT)
+            const finalText =
+                transcript?.trim() ||
+                form.description?.trim() ||
+                form.title?.trim() ||
+                "";
+
             formData.append("title", form.title);
             formData.append("description", form.description);
-            if (form.file) formData.append("file", form.file);
-            // include transcript (speech-to-text) if available
-            if (transcript && transcript.trim()) formData.append('text', transcript.trim());
+            formData.append("text", finalText);
+
+            if (form.file) {
+                formData.append("file", form.file);
+            }
 
             await createComplaint(formData);
 
@@ -107,11 +148,10 @@ export default function Complaint() {
 
             setForm({ title: "", description: "", file: null });
             setAudioURL(null);
-            setTranscript('');
-
+            setTranscript("");
         } catch (err) {
             console.error(err);
-            toast.error("Failed ❌");
+            toast.error("Submission failed ❌");
         }
     };
 
@@ -119,43 +159,74 @@ export default function Complaint() {
         <div className="p-6 max-w-xl mx-auto">
             <h1 className="text-2xl font-bold mb-4">Raise Complaint 📢</h1>
 
+            {/* INFO */}
+            <p className="text-xs text-gray-500 mb-2">
+                ⚠️ Voice typing works best on Desktop Chrome. Mobile may be limited.
+            </p>
+
+            {/* TITLE */}
             <input
                 type="text"
                 placeholder="Title"
                 className="w-full mb-3 p-2 border rounded"
                 value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                onChange={(e) =>
+                    setForm({ ...form, title: e.target.value })
+                }
             />
 
+            {/* DESCRIPTION */}
             <textarea
                 placeholder="Description"
                 className="w-full mb-3 p-2 border rounded"
                 value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                }
             />
 
-            <div className="mb-3 flex flex-col sm:flex-row sm:items-center gap-3">
-                <label className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 rounded cursor-pointer">
-                    <input type="file" accept="audio/*" onChange={handleFileChange} className="hidden" />
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A2 2 0 0122 9.618v4.764a2 2 0 01-2.447 1.894L15 14M4 6v12" />
-                    </svg>
-                    <span className="text-sm">Attach Audio</span>
+            {/* AUDIO + RECORD */}
+            <div className="mb-3 flex flex-col sm:flex-row gap-3">
+                <label className="px-3 py-2 bg-gray-100 rounded cursor-pointer">
+                    <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                    />
+                    Attach Audio
                 </label>
 
                 {!recording ? (
-                    <button onClick={startRecording} className="px-3 py-1 bg-indigo-600 text-white rounded">Record Voice</button>
+                    <button
+                        onClick={startRecording}
+                        className="px-3 py-1 bg-indigo-600 text-white rounded"
+                    >
+                        Record Voice
+                    </button>
                 ) : (
-                    <button onClick={stopRecording} className="px-3 py-1 bg-red-500 text-white rounded">Stop</button>
+                    <button
+                        onClick={stopRecording}
+                        className="px-3 py-1 bg-red-500 text-white rounded"
+                    >
+                        Stop
+                    </button>
                 )}
             </div>
 
+            {/* AUDIO PLAYER */}
             {audioURL && (
-                <div className="mb-3">
-                    <audio controls className="w-full" src={audioURL} />
+                <audio controls className="w-full mb-3" src={audioURL} />
+            )}
+
+            {/* 🎤 TRANSCRIPT DEBUG */}
+            {transcript && (
+                <div className="mb-3 p-2 bg-gray-100 rounded text-sm">
+                    🎤 {transcript}
                 </div>
             )}
 
+            {/* SUBMIT */}
             <button
                 onClick={handleSubmit}
                 className="w-full bg-red-500 text-white p-2 rounded"
