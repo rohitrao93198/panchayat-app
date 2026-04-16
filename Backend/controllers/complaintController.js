@@ -45,7 +45,12 @@ export const createComplaint = async (req, res) => {
 
         if (text) {
             try {
-                const aiData = await processComplaint(text);
+                // detect Devanagari script (Hindi) in text and request Hindi summary when present
+                const isHindi = /[\u0900-\u097F]/.test(text);
+                const lang = isHindi ? 'hi' : 'en';
+                console.debug('Detected language for AI processing:', lang);
+
+                const aiData = await processComplaint(text, lang);
 
                 try {
                     parsedData = JSON.parse(aiData);

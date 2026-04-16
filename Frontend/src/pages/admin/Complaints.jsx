@@ -38,6 +38,11 @@ export default function Complaints() {
                                     <div className="text-sm text-gray-600">{c.userId?.flatNumber || '-'}</div>
                                     <div className="mt-2 text-sm">{c.translatedText || c.originalText || '—'}</div>
                                     <div className="text-xs text-gray-400 mt-2">{c.category || '-'} • {c.priority || '-'}</div>
+                                    {c.audioUrl && (
+                                        <div className="mt-3">
+                                            <audio controls className="w-full" src={`${serverBase}/${c.audioUrl.replaceAll('\\', '/')}`} />
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="text-right">
                                     <div className="mb-2">{c.status}</div>
