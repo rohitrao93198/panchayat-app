@@ -24,7 +24,9 @@ export const createComplaint = async (req, res) => {
         // 🔥 HYBRID LOGIC (MOST IMPORTANT)
         if ((!text || text.trim() === "") && req.file) {
             console.log("🎤 Using Deepgram for transcription...");
+            console.log('uploaded file:', { originalname: req.file.originalname, filename: req.file.filename, path: req.file.path, mimetype: req.file.mimetype });
             text = await speechToText(req.file.path);
+            console.log('deepgram transcription result:', text);
         }
 
         // 🛟 FINAL FALLBACK (very important)
