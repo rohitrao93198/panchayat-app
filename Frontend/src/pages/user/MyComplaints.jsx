@@ -42,16 +42,39 @@ export default function MyComplaints() {
             <div className="mb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <h1 className="text-2xl font-bold">My Complaints</h1>
-                    <div className="flex items-center gap-2">
-                        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search complaints" className="px-3 py-2 border rounded w-56" />
-                        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-2 py-2 border rounded">
+                    <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+
+                        <input
+                            value={q}
+                            onChange={(e) => setQ(e.target.value)}
+                            placeholder="Search complaints"
+                            className="px-3 py-2 border rounded w-full sm:w-56"
+                        />
+
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="px-2 py-2 border rounded w-full sm:w-auto"
+                        >
                             <option value="">All status</option>
                             <option value="pending">Pending</option>
                             <option value="resolved">Resolved</option>
                             <option value="rejected">Rejected</option>
                         </select>
-                        <input value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} placeholder="Category" className="px-3 py-2 border rounded w-36" />
-                        <button onClick={fetchComplaints} className="px-3 py-2 bg-gray-100 rounded">Refresh</button>
+
+                        <input
+                            value={categoryFilter}
+                            onChange={(e) => setCategoryFilter(e.target.value)}
+                            placeholder="Category"
+                            className="px-3 py-2 border rounded w-full sm:w-36"
+                        />
+
+                        <button
+                            onClick={fetchComplaints}
+                            className="px-3 py-2 bg-gray-100 rounded w-full sm:w-auto"
+                        >
+                            Refresh
+                        </button>
                     </div>
                 </div>
             </div>
@@ -125,4 +148,3 @@ function getServerBase() {
     const base = (API && API.defaults && API.defaults.baseURL) || '';
     return base.replace(/\/api\/?$/, '');
 }
-const base = API.defaults.baseURL || '';

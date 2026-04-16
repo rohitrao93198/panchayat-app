@@ -134,12 +134,14 @@ export default function Complaint() {
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
 
-            <div className="mb-3 flex items-center gap-3">
-                <input
-                    type="file"
-                    accept="audio/*"
-                    onChange={handleFileChange}
-                />
+            <div className="mb-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                <label className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 rounded cursor-pointer">
+                    <input type="file" accept="audio/*" onChange={handleFileChange} className="hidden" />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A2 2 0 0122 9.618v4.764a2 2 0 01-2.447 1.894L15 14M4 6v12" />
+                    </svg>
+                    <span className="text-sm">Attach Audio</span>
+                </label>
 
                 {!recording ? (
                     <button onClick={startRecording} className="px-3 py-1 bg-indigo-600 text-white rounded">Record Voice</button>
@@ -150,7 +152,7 @@ export default function Complaint() {
 
             {audioURL && (
                 <div className="mb-3">
-                    <audio controls src={audioURL} />
+                    <audio controls className="w-full" src={audioURL} />
                 </div>
             )}
 

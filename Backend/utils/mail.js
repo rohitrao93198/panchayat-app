@@ -90,7 +90,7 @@ export const sendWelcomeEmail = async (user) => {
 
         <!-- Button -->
         <div style="text-align:center; margin-top:20px;">
-          <a href="http://localhost:5173" 
+          <a href="https://panchayat-app-five.vercel.app" 
              style="background:#4f46e5; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">
             Open Panchayat
           </a>
