@@ -213,13 +213,14 @@ export default function Complaint() {
                 <label className="px-3 py-2 bg-gray-100 rounded cursor-pointer">
                     <input
                         type="file"
-                        accept="audio/*"
+                        accept="audio/*,audio/m4a,audio/mp4,.m4a,.mp3,.wav"
                         capture="microphone"
                         onChange={handleFileChange}
                         className="hidden"
                     />
                     Attach Audio
                 </label>
+                <div className="text-xs text-gray-500">If the camera opens on iPhone, choose the microphone/voice option or use "Record Voice" button.</div>
 
                 {!recording ? (
                     <button
