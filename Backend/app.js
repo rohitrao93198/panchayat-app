@@ -14,8 +14,6 @@ import notificationRoutes from './routes/notificationRoutes.js';
 
 const app = express();
 
-import cors from "cors";
-
 const allowedOrigins = [
     "http://localhost:5173",
     "https://panchayat-app-five.vercel.app"
