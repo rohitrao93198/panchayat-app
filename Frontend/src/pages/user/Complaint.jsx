@@ -16,10 +16,16 @@ export default function Complaint() {
     const mediaRef = useRef(null);
     const chunksRef = useRef([]);
     const recognitionRef = useRef(null);
+    const [supportsRecording, setSupportsRecording] = useState(true);
 
     // 🎤 START RECORDING
     const startRecording = async () => {
         try {
+            if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                setSupportsRecording(false);
+                toast.error('In-app recording not supported on this device — use Attach Audio');
+                return;
+            }
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
             const mediaRecorder = new MediaRecorder(stream);
@@ -101,7 +107,9 @@ export default function Complaint() {
             setRecording(true);
         } catch (err) {
             console.error(err);
-            toast.error("Microphone access denied ❌");
+            console.debug('startRecording error', err);
+            setSupportsRecording(false);
+            toast.error("Cannot access microphone on this device — use Attach Audio");
         }
     };
 
@@ -206,6 +214,7 @@ export default function Complaint() {
                     <input
                         type="file"
                         accept="audio/*"
+                        capture="microphone"
                         onChange={handleFileChange}
                         className="hidden"
                     />
