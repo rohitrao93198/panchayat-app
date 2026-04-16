@@ -69,14 +69,28 @@ export default function Complaint() {
             }
 
             mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) {
-                    chunksRef.current.push(e.data);
-                }
+                console.debug('mediaRecorder.ondataavailable size=', e.data?.size);
+                if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+            };
+
+            mediaRecorder.onerror = (ev) => {
+                console.error('mediaRecorder.onerror', ev);
+                setRecording(false);
+                toast.error('Recording error occurred');
             };
 
             mediaRecorder.onstop = () => {
                 const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
                 const blob = new Blob(chunksRef.current, { type: mimeType });
+
+                console.debug('mediaRecorder.onstop blob size=', blob.size, 'type=', blob.type);
+
+                if (!blob || blob.size === 0) {
+                    toast.error('Recorded audio is empty');
+                    setRecording(false);
+                    try { stream.getTracks().forEach((track) => track.stop()); } catch { }
+                    return;
+                }
 
                 const url = URL.createObjectURL(blob);
                 setAudioURL(url);
@@ -96,7 +110,7 @@ export default function Complaint() {
 
                 setForm((prev) => ({ ...prev, file }));
 
-                stream.getTracks().forEach((track) => track.stop());
+                try { stream.getTracks().forEach((track) => track.stop()); } catch { }
 
                 try {
                     recognitionRef.current?.stop();
@@ -106,7 +120,7 @@ export default function Complaint() {
             mediaRecorder.start();
             setRecording(true);
         } catch (err) {
-            console.error(err);
+            console.error('startRecording catch', err);
             console.debug('startRecording error', err);
             setSupportsRecording(false);
             toast.error("Cannot access microphone on this device — use Attach Audio");
