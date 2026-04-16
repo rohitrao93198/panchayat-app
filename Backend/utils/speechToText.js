@@ -57,6 +57,42 @@ export const speechToText = async (filePath) => {
             }
         }
 
+        // If still no transcript, attempt language-specific retries (Hindi then English)
+        if (!text) {
+            const tryLangs = ['hi', 'en'];
+            for (const lang of tryLangs) {
+                try {
+                    console.debug(`Retrying Deepgram with language=${lang} (raw)`);
+                    const rawRes = await axios.post(`https://api.deepgram.com/v1/listen?language=${lang}`, audio, {
+                        headers: { Authorization: `Token ${process.env.DEEPGRAM_API_KEY}`, 'Content-Type': contentType },
+                        timeout: 120000,
+                    });
+                    text = rawRes?.data?.results?.channels?.[0]?.alternatives?.[0]?.transcript || '';
+                    if (text) {
+                        console.debug(`Deepgram raw retry succeeded for language=${lang}`);
+                        break;
+                    }
+                } catch (errLang) {
+                    console.debug(`Deepgram raw retry failed for language=${lang}`, errLang?.message || errLang);
+                }
+
+                try {
+                    console.debug(`Retrying Deepgram with language=${lang} (form-data)`);
+                    const form2 = new FormData();
+                    form2.append('file', fs.createReadStream(filePath));
+                    const headers2 = { Authorization: `Token ${process.env.DEEPGRAM_API_KEY}`, ...form2.getHeaders() };
+                    const fmRes2 = await axios.post(`https://api.deepgram.com/v1/listen?language=${lang}`, form2, { headers: headers2, timeout: 120000 });
+                    text = fmRes2?.data?.results?.channels?.[0]?.alternatives?.[0]?.transcript || '';
+                    if (text) {
+                        console.debug(`Deepgram form-data retry succeeded for language=${lang}`);
+                        break;
+                    }
+                } catch (fmErr2) {
+                    console.debug(`Deepgram form-data retry failed for language=${lang}`, fmErr2?.message || fmErr2);
+                }
+            }
+        }
+
         return text || "";
     } catch (err) {
         console.error("Deepgram error:", err?.message || err);
