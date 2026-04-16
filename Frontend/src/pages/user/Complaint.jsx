@@ -69,18 +69,24 @@ export default function Complaint() {
             };
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, {
-                    type: MediaRecorder.isTypeSupported("audio/webm")
-                        ? "audio/webm"
-                        : "audio/mp4"
-                });
+                const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+                const blob = new Blob(chunksRef.current, { type: mimeType });
 
                 const url = URL.createObjectURL(blob);
                 setAudioURL(url);
 
-                const file = new File([blob], `complaint-${Date.now()}`, {
-                    type: blob.type
-                });
+                // map mime to extension
+                const extMap = {
+                    'audio/webm': '.webm',
+                    'audio/mp4': '.mp4',
+                    'audio/mpeg': '.mp3',
+                    'audio/wav': '.wav'
+                };
+
+                const ext = extMap[blob.type] || '.webm';
+                const fileName = `complaint-${Date.now()}${ext}`;
+
+                const file = new File([blob], fileName, { type: blob.type });
 
                 setForm((prev) => ({ ...prev, file }));
 

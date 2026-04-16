@@ -45,7 +45,7 @@ export default function Chatbot() {
 
                 {messages.map((msg, i) => (
                     <div key={i} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`inline-block px-3 py-2 rounded max-w-[80%] break-words ${msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-900'}`}>
+                        <div className={`inline-block px-3 py-2 rounded max-w-[80%] wrap-break-words ${msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-900'}`}>
                             {msg.text}
                         </div>
                     </div>
